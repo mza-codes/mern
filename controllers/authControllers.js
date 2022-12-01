@@ -5,12 +5,14 @@ const asyncHandler = require('../middlewares/asyncHandler');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-exports.createAccessToken = (user) => {
-    return jwt.sign({ userId: user._id }, process.env.JWT_KEY ?? "m$auth", { expiresIn: "1h" });
+exports.refreshTokens = [];
+
+exports.createAccessToken = ({ _id }) => {
+    return jwt.sign({ userId: _id }, process.env.JWT_KEY ?? "m$auth", { expiresIn: "30s" });
 };
 
-exports.createRefreshToken = (user) => {
-    return jwt.sign({ userId: user._id }, process.env.JWT_KEY ?? "m$authRefresh", { expiresIn: "1h" });
+exports.createRefreshToken = ({ _id }) => {
+    return jwt.sign({ userId: _id }, process.env.JWT_REFRESH_KEY ?? "m$authRefresh");
 };
 
 exports.createAuth = asyncHandler(async (req, res, next) => {
@@ -24,10 +26,14 @@ exports.createAuth = asyncHandler(async (req, res, next) => {
     const newUser = await User.create(req.body);
     const { password, ...other } = newUser._doc; // _doc is specified to get the actual JSON data
 
-    const token = createAccessToken(other);
+    const token = this.createAccessToken(other);
+    // Custom caching
+    const refreshToken = this.createRefreshToken(other);
+    this.refreshTokens.push(refreshToken);
+
     res.setHeader('user_token', token);
 
-    return res.status(200).json({ success: true, data: other });
+    return res.status(200).json({ success: true, user: other, refreshToken: refreshToken });
 });
 
 exports.auth = asyncHandler(async (req, res, next) => {
@@ -41,10 +47,14 @@ exports.auth = asyncHandler(async (req, res, next) => {
     if (stat === true) {
         const { password, ...other } = dbUser._doc; // _doc is specified to get the actual JSON data
 
-        const token = createAccessToken(other);
+        const token = this.createAccessToken(other);
+        // Custom caching
+        const refreshToken = this.createRefreshToken(other);
+        this.refreshTokens.push(refreshToken);
+
         res.setHeader('user_token', token);
 
-        return res.status(200).json({ success: true, data: other });
+        return res.status(200).json({ success: true, user: other, refreshToken: refreshToken });
     } else {
         return res.status(401).json({ success: false, message: 'Incorrect Password' });
     };
@@ -52,17 +62,19 @@ exports.auth = asyncHandler(async (req, res, next) => {
 
 exports.logout = asyncHandler(async (req, res, next) => {
     console.log("Logout User");
+    const currentRefreshToken = req.body.refreshToken;
+    this.refreshTokens = this.refreshTokens.filter((item) => item !== currentRefreshToken);
     return res.status(200).json({ success: true, message: "Logout Complete", data: {} });
 });
 
 exports.updateAuth = asyncHandler(async (req, res, next) => {
     console.log("REACHED updateAuth");
     console.log("req.id", req.userId);
-    res.send("Good");
+    res.status(200).json("Good");
 });
 
 exports.removeAuth = asyncHandler(async (req, res, next) => {
     console.log("REACHED removeAuth route");
     console.log("req.id", req.userId);
-    res.send('removeAuth delete ro)ute');
+    res.status(200).json('removeAuth delete ro)ute');
 });

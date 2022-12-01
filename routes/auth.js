@@ -6,8 +6,8 @@ const jwtAuth = require('../middlewares/authorizeUser');
 // @route - /api/v1/auth/
 router.route('/register').post(authControllers.createAuth);
 router.route('/login').post(authControllers.auth);
-router.get('/logout',jwtAuth.checkAuthorization, authControllers.logout);
-router.get('/refreshToken',jwtAuth.refreshToken, authControllers.logout);
+router.post('/logout',jwtAuth.checkAuthorization, authControllers.logout);
+router.post('/refresh-token',jwtAuth.refreshToken);
 
 router.route('/test2').get(jwtAuth.checkAuthorization, authControllers.updateAuth);
 router.get('/test', authControllers.updateAuth);
