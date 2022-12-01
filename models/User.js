@@ -6,8 +6,8 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: [true, "Required "] },
     country: { type: String, required: [true, "Required"] },
     age: { type: Number, required: [true, "Required"] }
-}, { timestamps: true })
+}, { timestamps: true });
 
-const User = mongoose.model('User', userSchema)
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;
