@@ -7,6 +7,7 @@ const jwtAuth = require('../middlewares/authorizeUser');
 router.route('/register').post(authControllers.createAuth);
 router.route('/login').post(authControllers.auth);
 router.route('/test2').get(jwtAuth.checkAuthorization, authControllers.updateAuth);
+router.get('/test', authControllers.updateAuth);
 
 // @route - /api/v1/auth/<id>
 router.route('/:id')
