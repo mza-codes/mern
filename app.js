@@ -15,6 +15,7 @@ const connectDB = async () => {
         // disabled as it clearly shows error: <> MongoParseError: options usecreateindex, usefindandmodify are not supported </>
         useUnifiedTopology: true,
         useNewUrlParser: true,
+        dbName:"testMode"
     }).then(() => log.info('DB Connection Success !'))
         .catch((err) => {
             log.error('DB Connection Failed', err);
