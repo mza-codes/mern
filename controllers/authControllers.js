@@ -4,17 +4,19 @@ const User = require('../models/User');
 const asyncHandler = require('../middlewares/asyncHandler');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { refreshTokens } = require('../session/tokens');
-
-// exports.refreshTokens = [];
+let { refreshTokens, userTokens } = require('../session/tokens');
 
 
 exports.createAccessToken = ({ _id }) => {
-    return jwt.sign({ userId: _id }, process.env.JWT_KEY ?? "m$auth", { expiresIn: "30s" });
+    const newToken = jwt.sign({ userId: _id }, process.env.JWT_KEY ?? "m$auth", { expiresIn: "5m" });
+    userTokens.push(newToken);
+    return newToken;
 };
 
 exports.createRefreshToken = ({ _id }) => {
-    return jwt.sign({ userId: _id }, process.env.JWT_REFRESH_KEY ?? "m$authRefresh", {expiresIn:"1d"});
+    const newToken = jwt.sign({ userId: _id }, process.env.JWT_REFRESH_KEY ?? "m$authRefresh", { expiresIn: "1d" });
+    refreshTokens.push(newToken);
+    return newToken;
 };
 
 exports.createAuth = asyncHandler(async (req, res, next) => {
@@ -29,12 +31,9 @@ exports.createAuth = asyncHandler(async (req, res, next) => {
     const { password, ...other } = newUser._doc; // _doc is specified to get the actual JSON data
 
     const token = this.createAccessToken(other);
-    // Custom caching
-    const refreshToken = this.createRefreshToken(other);
-    refreshTokens.push(refreshToken);
+    this.createRefreshToken(other);
 
     res.setHeader('user_token', token);
-
     return res.status(200).json({ success: true, user: other, refreshToken: refreshToken });
 });
 
@@ -52,8 +51,6 @@ exports.auth = asyncHandler(async (req, res, next) => {
         const token = this.createAccessToken(other);
         // Custom caching
         const refreshToken = this.createRefreshToken(other);
-        refreshTokens.push(refreshToken);
-
         res.setHeader('user_token', token);
 
         return res.status(200).json({ success: true, user: other, refreshToken: refreshToken });
@@ -66,7 +63,8 @@ exports.logout = asyncHandler(async (req, res, next) => {
     console.log("Logout User");
     const currentRefreshToken = req.body.refreshToken;
     refreshTokens = refreshTokens.filter((item) => item !== currentRefreshToken);
-    return res.status(200).json({ success: true, message: "Logout Complete", data: {} });
+    userTokens = userTokens.filter((item) => item !== req.userToken);
+    return res.status(200).json({ success: true, message: "Logout Complete", user: {} });
 });
 
 exports.updateAuth = asyncHandler(async (req, res, next) => {

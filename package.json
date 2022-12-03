@@ -20,7 +20,7 @@
     "nodemon": "^2.0.20"
   },
   "scripts": {
-    "start": "node app.js",
+    "start": "node app.js | bunyan -o short",
     "dev": "nodemon app.js | bunyan -o short"
   }
 }
